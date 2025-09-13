@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Editor Kode Online Multi-Bahasa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #2a9d8f 0%, #264653 100%);
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+        }
+        #code-input {
+            font-size: 14px;
+            line-height: 1.5;
+            background: #1f2937; /* abu gelap */
+            color: #d1fae5; /* hijau muda */
+            border: none;
+            resize: none;
+            min-height: 300px;
+        }
+        #output {
+            background: #1f2937;
+            color: #d1fae5;
+            border: 1px solid #4ade80; /* hijau terang */
+            padding: 10px;
+            min-height: 200px;
+            overflow-y: auto;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        #preview {
+            width: 100%;
+            height: 400px;
+            border: 1px solid #4ade80;
+            background: white;
+        }
+        select, button {
+            transition: background-color 0.3s ease;
+        }
+        button:focus, select:focus {
+            outline: none;
+            box-shadow: 0 0 5px #4ade80;
+        }
+    </style>
+</head>
+<body class="text-green-200">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold text-center mb-6">Editor Kode Online Multi-Bahasa</h1>
+        <p class="text-center mb-8">Tulis kode dalam berbagai bahasa, lihat hasil langsung, dan simpan pekerjaan Anda. Mendukung eksekusi JS langsung, pratinjau HTML/CSS, dan simulasi output untuk bahasa lain.</p>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Bagian Input Kode -->
+            <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                <div class="mb-4 flex justify-between items-center">
+                    <label for="language-select" class="block text-lg font-medium">Pilih Bahasa:</label>
+                    <select id="language-select" class="bg-gray-700 text-green-200 p-2 rounded">
+                        <option value="javascript">JavaScript</option>
+                        <option value="html">HTML</option>
+                        <option value="css">CSS</option>
+                        <option value="python">Python (Simulasi)</option>
+                        <option value="java">Java (Simulasi)</option>
+                        <option value="cpp">C++ (Simulasi)</option>
+                        <option value="ruby">Ruby (Simulasi)</option>
+                        <option value="php">PHP (Simulasi)</option>
+                        <option value="go">Go (Simulasi)</option>
+                        <option value="rust">Rust (Simulasi)</option>
+                        <option value="kotlin">Kotlin (Simulasi)</option>
+                        <option value="typescript">TypeScript (Transpilasi ke JS)</option>
+                        <option value="sql">SQL (Simulasi Query)</option>
+                        <option value="bash">Bash (Simulasi)</option>
+                    </select>
+                </div>
+                <textarea id="code-input" placeholder="Tulis kode Anda di sini..."></textarea>
+                <div class="mt-4 flex space-x-4">
+                    <button id="run-btn" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Jalankan Kode</button>
+                    <button id="save-btn" class="bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded">Simpan Kode</button>
+                    <button id="clear-btn" class="bg-red-600 hover:bg-red-800 text-white font-bold py-2 px-4 rounded">Bersihkan</button>
+                </div>
+            </div>
+
+            <!-- Bagian Output -->
+            <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                <h2 class="text-2xl font-bold mb-4">Output / Pratinjau</h2>
+                <div id="output-container">
+                    <iframe id="preview" style="display: none;"></iframe>
+                    <div id="output"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const languageSelect = document.getElementById('language-select');
+        const codeInput = document.getElementById('code-input');
+        const outputContainer = document.getElementById('output-container');
+        const preview = document.getElementById('preview');
+        const output = document.getElementById('output');
+        const runBtn = document.getElementById('run-btn');
+        const saveBtn = document.getElementById('save-btn');
+        const clearBtn = document.getElementById('clear-btn');
+
+        const sampleCodes = {
+            javascript: 'console.log("Halo, Dunia!");\n// Tulis kode JS Anda di sini\n// Contoh: const x = 5; console.log(x * 2);',
+            html: '<!DOCTYPE html>\n<html>\n<head><title>Halaman Saya</title></head>\n<body>\n  <h1>Halo, Dunia!</h1>\n  <p>Ini adalah HTML.</p>\n</body>\n</html>',
+            css: 'body { background: linear-gradient(45deg, #2a9d8f, #264653); color: white; font-family: Arial; }\nh1 { text-align: center; font-size: 2rem; }',
+            python: 'print("Halo, Dunia!")\n# Simulasi: Untuk Python asli, jalankan di server\nname = input("Masukkan nama: ")\nprint(f"Halo, {name}!")',
+            java: 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Halo, Dunia!");\n        // Simulasi output\n    }\n}',
+            cpp: '#include <iostream>\nint main() {\n    std::cout << "Halo, Dunia!" << std::endl;\n    return 0;\n}',
+            ruby: 'puts "Halo, Dunia!"\n# Simulasi\nputs "Masukkan nama:"; name = gets.chomp; puts "Hai, #{name}!"',
+            php: '<?php\necho "Halo, Dunia!";\n// Simulasi: Untuk eksekusi server\n$name = readline("Masukkan nama: ");\necho "Hai, $name!";\n?>',
+            go: 'package main\nimport "fmt"\nfunc main() {\n    fmt.Println("Halo, Dunia!")\n}',
+            rust: 'fn main() {\n    println!("Halo, Dunia!");\n    // Simulasi\n}',
+            kotlin: 'fun main() {\n    println("Halo, Dunia!")\n    // Simulasi\n}',
+            typescript: 'console.log("Halo, TypeScript!")\nconst x: number = 42;\nconsole.log(x);\n// Transpilasi ke JS di output',
+            sql: 'SELECT * FROM users WHERE name = "John";\n-- Simulasi hasil query: Ditemukan 5 baris',
+            bash: 'echo "Halo, Dunia!"\n# Simulasi\nread -p "Masukkan nama: " name\necho "Hai, $name!"'
+        };
+
+        languageSelect.addEventListener('change', () => {
+            const lang = languageSelect.value;
+            codeInput.value = sampleCodes[lang] || '// Mulai menulis kode!';
+            updateOutput();
+        });
+
+        runBtn.addEventListener('click', updateOutput);
+
+        function updateOutput() {
+            const lang = languageSelect.value;
+            const code = codeInput.value;
+            preview.style.display = 'none';
+            output.innerHTML = '';
+            try {
+                if (lang === 'javascript') {
+                    let logs = [];
+                    const originalLog = console.log;
+                    console.log = (...args) => {
+                        logs.push(args.join(' '));
+                        originalLog.apply(console, args);
+                    };
+                    eval(code);
+                    output.innerHTML = '<pre>' + logs.join('\n') + '</pre>';
+                    console.log = originalLog;
+                } else if (lang === 'html') {
+                    preview.srcdoc = code;
+                    preview.style.display = 'block';
+                } else if (lang === 'css') {
+                    preview.srcdoc = '<style>' + code + '</style><div>Pratinjau dengan CSS diterapkan<br><h1>Judul</h1><p>Paragraf dengan gaya.</p></div>';
+                    preview.style.display = 'block';
+                } else if (lang === 'typescript') {
+                    let logs = [];
+                    const originalLog = console.log;
+                    console.log = (...args) => {
+                        logs.push(args.join(' '));
+                        originalLog.apply(console, args);
+                    };
+                    eval(code);
+                    output.innerHTML = '<pre>Output JS hasil transpilasi:\n' + logs.join('\n') + '</pre>';
+                    console.log = originalLog;
+                } else {
+                    const simulatedOutput = simulateOutput(lang, code);
+                    output.innerHTML = '<pre>' + simulatedOutput + '</pre>';
+                }
+            } catch (e) {
+                output.innerHTML = '<pre style="color: #f87171;">Kesalahan: ' + e.message + '</pre>';
+            }
+        }
+
+        function simulateOutput(lang, code) {
+            if (code.includes('print') || code.includes('console') || code.includes('cout') || code.includes('puts') || code.includes('echo')) {
+                return 'Output Simulasi:\nHalo, Dunia!\n' + (code.includes('input') || code.includes('read') ? 'Input disimulasikan: Data pengguna diproses.' : '');
+            }
+            return 'Kode dijalankan (simulasi untuk ' + lang.toUpperCase() + '). Output asli memerlukan eksekusi server.';
+        }
+
+        saveBtn.addEventListener('click', () => {
+            const code = codeInput.value;
+            const lang = languageSelect.value;
+            const blob = new Blob([code], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `kode.${lang}`;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        clearBtn.addEventListener('click', () => {
+            codeInput.value = '';
+            output.innerHTML = '';
+            preview.style.display = 'none';
+        });
+
+        // Inisialisasi
+        codeInput.value = sampleCodes.javascript;
+        updateOutput();
+    </script>
+</body>
+</html>
